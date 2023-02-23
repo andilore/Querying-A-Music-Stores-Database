@@ -1,0 +1,111 @@
+/* Query 1: Which company purchased the most song tracks? */
+
+SELECT c.company AS Company,
+	   SUM(il.UnitPrice * il.Quantity) AS Total_amt_spent
+FROM customer c
+JOIN invoice i
+ON c.customerID = i.customerID
+JOIN invoiceLine il
+ON i.invoiceID = il.invoiceID
+WHERE company IS NOT NULL
+GROUP BY 1
+ORDER BY 2 DESC
+
+/* Query 2: From Canadian purchases, which artist earned the most from their songs? */
+
+SELECT i.billingCountry AS country,
+	   art.name AS Artist,
+       SUM(il.UnitPrice * il.Quantity) AS revenue
+FROM artist art
+JOIN album alb
+ON art.artistID = alb.artistID
+JOIN track t
+ON alb.albumID = t.albumID
+JOIN invoiceLine il
+ON t.trackID = il.trackID
+JOIN invoice i
+ON il.invoiceID = i.invoiceID
+GROUP BY 1,2
+HAVING i.billingCountry = 'Canada'
+ORDER BY 1,3 DESC;
+
+
+
+/* Query 3: For each country, which genre earned the most revenue? */
+
+SELECT t2.country AS country, 
+	   t2.max_revenue AS max_revenue,
+       t1.genre AS genre
+FROM (
+	SELECT country, MAX(revenue) AS max_revenue
+    FROM (
+        SELECT i.billingCountry AS Country,
+               g.name AS Genre,
+               SUM(il.unitPrice * il.Quantity) AS Revenue
+        FROM invoice i
+        JOIN invoiceLine il
+        ON i.invoiceID = il.invoiceID
+        JOIN track t
+        ON il.trackID = t.trackID
+        JOIN genre g
+        ON t.genreID = g.genreID
+        GROUP BY 1,2
+        ORDER BY 1,3 DESC      ) t1
+    GROUP BY 1
+    ORDER BY 1							) t2
+JOIN (
+  	SELECT i.billingCountry AS Country,
+           g.name AS Genre,
+           SUM(il.unitPrice * il.Quantity) AS Revenue
+    FROM invoice i
+    JOIN invoiceLine il
+    ON i.invoiceID = il.invoiceID
+    JOIN track t
+    ON il.trackID = t.trackID
+    JOIN genre g
+  	ON t.genreID = g.genreID
+    GROUP BY 1,2
+  	ORDER BY 1,3 DESC      ) t1
+ON t1.revenue = t2.max_revenue AND t1.country = t2.country
+
+
+/* Query 4: For each genre, how much did the top-spending customer spend on music? */
+
+SELECT t2.*, t1.First_Name, t1.Last_Name
+FROM (
+	SELECT genre, MAX(amt_spent) AS max_spent
+    FROM (
+        SELECT g.name AS Genre, 
+               c.firstName AS First_Name, 
+               c.lastName AS Last_Name,
+               SUM(il.UnitPrice * il.Quantity) AS Amt_Spent
+        FROM genre g
+        JOIN track t
+        ON g.genreID = t.genreID
+        JOIN invoiceLine il
+        ON t.trackID = il.trackID
+        JOIN invoice i
+        ON il.invoiceID = i.invoiceID
+        JOIN customer c
+        ON i.customerID = c.customerID
+        GROUP BY 1,3,2
+        ORDER BY 1,4 DESC		) AS t1
+    GROUP BY 1
+    ORDER BY 2 DESC					) AS t2
+JOIN (
+  	SELECT g.name AS Genre, 
+           c.firstName AS First_Name, 
+           c.lastName AS Last_Name,
+           SUM(il.UnitPrice * il.Quantity) AS Amt_Spent
+    FROM genre g
+    JOIN track t
+    ON g.genreID = t.genreID
+    JOIN invoiceLine il
+    ON t.trackID = il.trackID
+    JOIN invoice i
+    ON il.invoiceID = i.invoiceID
+    JOIN customer c
+    ON i.customerID = c.customerID
+    GROUP BY 1,3,2
+    ORDER BY 1,4 DESC		) AS t1
+ON t2.genre = t1.genre AND t2.max_spent = t1.Amt_Spent
