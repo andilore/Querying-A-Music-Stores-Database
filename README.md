@@ -2,7 +2,7 @@
 
 This project involved a Chinook Database (provided). The Chinook Database holds information about a music store. 
 
-In this project, I assisted the Chinook team with this project is about assisting the Chinook team with understanding the following:
+This project is about assisting the Chinook team with understanding the following:
 
 - which companies spent the most on songs
 - which artists earned the most from their songs as it pertained to purchases made in Canada
